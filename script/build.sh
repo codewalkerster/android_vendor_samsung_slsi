@@ -11,17 +11,18 @@ then
 	exit 0
 fi
 
-if [ ! -f device/samsung/$1/build-info.sh ]
+if [ ! -f device/hardkernel/$1/build-info.sh ]
 then
 	echo "NO PRODUCT to build!!"
 	exit 0
 fi
 
-source device/samsung/$1/build-info.sh
+source device/hardkernel/$1/build-info.sh
 BUILD_OPTION=$2
 
 OUT_DIR="$ROOT_DIR/out/target/product/$PRODUCT_BOARD"
-OUT_HOSTBIN_DIR="$ROOT_DIR/vendor/samsung_slsi/script"
+#OUT_HOSTBIN_DIR="$ROOT_DIR/vendor/samsung_slsi/script"
+OUT_HOSTBIN_DIR="$ROOT_DIR/out/host/linux-x86/bin"
 KERNEL_CROSS_COMPILE_PATH="$ROOT_DIR/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-"
 
 function check_exit()
@@ -66,8 +67,8 @@ function build_android()
         echo "source build/envsetup.sh"
         source build/envsetup.sh
         echo
-        echo "lunch full_$PRODUCT_BOARD-eng"
-        lunch full_$PRODUCT_BOARD-eng
+        echo "lunch $PRODUCT_BOARD-eng"
+        lunch $PRODUCT_BOARD-eng
         echo
         echo "make -j$CPU_JOB_NUM"
         echo
@@ -110,8 +111,8 @@ function make_fastboot_img()
 	fi
 
 	echo 'boot.img ->' $OUT_DIR
-	cp $KERNEL_DIR/arch/arm/boot/zImage $OUT_DIR/zImage
-	$OUT_HOSTBIN_DIR/mkbootimg --kernel $OUT_DIR/zImage --ramdisk $OUT_DIR/ramdisk.img -o $OUT_DIR/boot.img
+	cp $KERNEL_DIR/arch/arm/boot/zImage-dtb $OUT_DIR/zImage-dtb
+	$OUT_HOSTBIN_DIR/mkbootimg --kernel $OUT_DIR/zImage-dtb --ramdisk $OUT_DIR/ramdisk.img -o $OUT_DIR/boot.img
 	check_exit
 
 	echo 'update.zip ->' $OUT_DIR
@@ -120,6 +121,71 @@ function make_fastboot_img()
 
 	echo
 }
+
+SYSTEMIMAGE_PARTITION_SIZE=$(grep "BOARD_SYSTEMIMAGE_PARTITION_SIZE " device/hardkernel/odroidxu3/BoardConfig.mk | awk '{field=$NF};END{print field}')
+
+function copy_root_2_system()
+{
+	echo
+    echo '[[[[[[[ copy ramdisk rootfs to system ]]]]]]]'
+	echo
+
+    rm -rf $OUT_DIR/system/init
+    rm -rf $OUT_DIR/system/sbin/adbd
+    rm -rf $OUT_DIR/system/sbin/healthd
+	cp -arp $OUT_DIR/root/* $OUT_DIR/system/
+	mv $OUT_DIR/system/init $OUT_DIR/system/bin/
+	ln -sf /bin/init $OUT_DIR/system/init
+	mv $OUT_DIR/system/sbin/adbd $OUT_DIR/system/bin/
+	ln -sf /system/bin/adbd $OUT_DIR/system/sbin/adbd
+	mv $OUT_DIR/system/sbin/healthd $OUT_DIR/system/bin/
+	ln -sf /system/bin/healthd $OUT_DIR/system/sbin/healthd
+
+    echo $SYSTEMIMAGE_PARTITION_SIZE
+
+    find $OUT_DIR/system -name .svn | xargs rm -rf
+	$OUT_HOSTBIN_DIR/make_ext4fs -s -l $SYSTEMIMAGE_PARTITION_SIZE -a system $OUT_DIR/system.img $OUT_DIR/system
+
+	sync
+}
+
+function make_update_zip()
+{
+	echo
+	echo '[[[[[[[ Make update zip ]]]]]]]'
+	echo
+
+	if [ ! -d $OUT_DIR/update ]
+	then
+		mkdir $OUT_DIR/update
+	else
+		rm -rf $OUT_DIR/update/*
+	fi
+
+    echo '$PRODUCT_BOARD'
+
+	cp $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/zImage-dtb $OUT_DIR/update/
+	cp $OUT_DIR/ramdisk.img $OUT_DIR/update/
+	cp $OUT_DIR/system.img $OUT_DIR/update/
+	cp $OUT_DIR/userdata.img $OUT_DIR/update/
+	cp $OUT_DIR/cache.img $OUT_DIR/update/
+
+	if [ -f $OUT_DIR/update.zip ]
+	then
+		rm -rf $OUT_DIR/update.zip
+		rm -rf $OUT_DIR/update.zip.md5sum
+	fi
+
+	echo 'update.zip ->' $OUT_DIR
+	pushd $OUT_DIR
+	zip -r update.zip update/*
+	md5sum update.zip > update.zip.md5sum
+	check_exit
+
+	echo
+	popd
+}
+
 
 echo
 echo '                Build android for '$PRODUCT_BOARD''
@@ -131,16 +197,19 @@ case "$BUILD_OPTION" in
 		;;
 	platform)
 		build_android
-		make_fastboot_img
+        copy_root_2_system
+		make_update_zip
 		;;
 	all)
 		build_kernel
 		build_android
-		make_fastboot_img
+        copy_root_2_system
+		make_update_zip
 		;;
 	*)
-		build_android
-		make_fastboot_img
+        build_android
+        copy_root_2_system
+		make_update_zip
 		;;
 esac
 
