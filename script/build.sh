@@ -20,9 +20,16 @@ fi
 source device/hardkernel/$1/build-info.sh
 BUILD_OPTION=$2
 
+if [ "x$OUT_DIR_COMMON_BASE" == "x" ]; then
 OUT_DIR="$ROOT_DIR/out/target/product/$PRODUCT_BOARD"
 #OUT_HOSTBIN_DIR="$ROOT_DIR/vendor/samsung_slsi/script"
 OUT_HOSTBIN_DIR="$ROOT_DIR/out/host/linux-x86/bin"
+else
+BASE_DIR=$OUT_DIR_COMMON_BASE/`basename $ROOT_DIR`
+OUT_DIR="$BASE_DIR/target/product/$PRODUCT_BOARD"
+OUT_HOSTBIN_DIR="$BASE_DIR/host/linux-x86/bin"
+fi
+
 KERNEL_CROSS_COMPILE_PATH="$ROOT_DIR/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-"
 
 function check_exit()
