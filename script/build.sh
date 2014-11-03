@@ -31,6 +31,7 @@ OUT_HOSTBIN_DIR="$BASE_DIR/host/linux-x86/bin"
 fi
 
 KERNEL_CROSS_COMPILE_PATH="$ROOT_DIR/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-"
+KERNEL_DIR="$ROOT_DIR/kernel/samsung/exynos5422"
 
 function check_exit()
 {
@@ -55,6 +56,8 @@ function build_kernel()
 	echo "make"
 	echo
 	make -j$CPU_JOB_NUM > /dev/null ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH
+	cp $KERNEL_DIR/arch/arm/boot/zImage-dtb $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/zImage-dtb
+	find $KERNEL_DIR -name *.ko | xargs -i cp {} $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/drivers
 	check_exit
 	END_TIME=`date +%s`
 
@@ -204,18 +207,19 @@ case "$BUILD_OPTION" in
 		;;
 	platform)
 		build_android
-        copy_root_2_system
+		copy_root_2_system
 		make_update_zip
 		;;
 	all)
 		build_kernel
 		build_android
-        copy_root_2_system
+		copy_root_2_system
 		make_update_zip
 		;;
 	*)
-        build_android
-        copy_root_2_system
+		build_kernel
+		build_android
+		copy_root_2_system
 		make_update_zip
 		;;
 esac
