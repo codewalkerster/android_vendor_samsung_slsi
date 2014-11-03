@@ -53,9 +53,12 @@ function build_kernel()
 	echo
 	make ARCH=arm $PRODUCT_BOARD"_defconfig"
 	check_exit
-	echo "make"
+	echo "make -j$CPU_JOB_NUM ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH"
 	echo
-	make -j$CPU_JOB_NUM > /dev/null ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH
+	make -j$CPU_JOB_NUM ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH
+	rm -rf ../../../vendor/ralink/DPO_RT5572_LinuxSTA_2.6.1.3_20121022/os/linux/rt5572sta.ko
+	make -C ../../../vendor/ralink/DPO_RT5572_LinuxSTA_2.6.1.3_20121022/
+	cp $ROOT_DIR/vendor/ralink/DPO_RT5572_LinuxSTA_2.6.1.3_20121022/os/linux/rt5572sta.ko $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/drivers
 	cp $KERNEL_DIR/arch/arm/boot/zImage-dtb $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/zImage-dtb
 	find $KERNEL_DIR -name *.ko | xargs -i cp {} $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/drivers
 	check_exit
