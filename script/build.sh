@@ -7,14 +7,14 @@ ROOT_DIR=$(pwd)
 
 if [ $# -lt 1 ]
 then
-	echo "Usage: ./build.sh <PRODUCT> [ kernel | platform | all ]"
-	exit 0
+    echo "Usage: ./build.sh <PRODUCT> [ kernel | platform | all ]"
+    exit 0
 fi
 
 if [ ! -f device/hardkernel/$1/build-info.sh ]
 then
-	echo "NO PRODUCT to build!!"
-	exit 0
+    echo "NO PRODUCT to build!!"
+    exit 0
 fi
 
 source device/hardkernel/$1/build-info.sh
@@ -30,44 +30,45 @@ OUT_DIR="$BASE_DIR/target/product/$PRODUCT_BOARD"
 OUT_HOSTBIN_DIR="$BASE_DIR/host/linux-x86/bin"
 fi
 
-KERNEL_CROSS_COMPILE_PATH="$ROOT_DIR/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-"
+KERNEL_CROSS_COMPILE_PATH=arm-eabi-
 KERNEL_DIR="$ROOT_DIR/kernel/samsung/exynos5422"
 
 function check_exit()
 {
-	if [ $? != 0 ]
-	then
-		exit $?
-	fi
+    if [ $? != 0 ]
+    then
+        exit $?
+    fi
 }
 
 function build_kernel()
 {
-	echo
-	echo '[[[[[[[ Build android kernel ]]]]]]]'
-	echo
+    echo
+    echo '[[[[[[[ Build android kernel ]]]]]]]'
+    echo
 
-	START_TIME=`date +%s`
-	pushd $KERNEL_DIR
-	echo "set defconfig for $PRODUCT_BOARD"
-	echo
-	make ARCH=arm $PRODUCT_BOARD"_defconfig"
-	check_exit
-	echo "make -j$CPU_JOB_NUM ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH"
-	echo
-	make -j$CPU_JOB_NUM ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH
-	rm -rf ../../../vendor/ralink/DPO_RT5572_LinuxSTA_2.6.1.3_20121022/os/linux/rt5572sta.ko
-	make -C ../../../vendor/ralink/DPO_RT5572_LinuxSTA_2.6.1.3_20121022/
-	cp $ROOT_DIR/vendor/ralink/DPO_RT5572_LinuxSTA_2.6.1.3_20121022/os/linux/rt5572sta.ko $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/drivers
-	cp $KERNEL_DIR/arch/arm/boot/zImage-dtb $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/zImage-dtb
-	find $KERNEL_DIR -name *.ko | xargs -i cp {} $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/drivers
-	check_exit
-	END_TIME=`date +%s`
+    START_TIME=`date +%s`
+    pushd $KERNEL_DIR
+    echo "set defconfig for $PRODUCT_BOARD"
+    echo
+    make ARCH=arm $PRODUCT_BOARD"_defconfig"
+    check_exit
+    echo "make -j$CPU_JOB_NUM ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH"
+    echo
+    make -j$CPU_JOB_NUM ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH
+    echo "make ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH -C $PWD M=$ROOT_DIR/hardware/wifi/realtek/drivers/8192cu/rtl8xxx_CU"
+    make ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH -C $PWD M=$ROOT_DIR/hardware/wifi/realtek/drivers/8192cu/rtl8xxx_CU
+    echo "make -C ../../../hardware/backports ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH KLIB_BUILD=$PWD defconfig-odroidxu3"
+    make -C ../../../hardware/backports ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH KLIB_BUILD=$PWD defconfig-odroidxu3
+    echo "make -C ../../../hardware/backports ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH KLIB_BUILD=$PWD"
+    make -C ../../../hardware/backports ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH KLIB_BUILD=$PWD
+    check_exit
+    END_TIME=`date +%s`
 
-	let "ELAPSED_TIME=$END_TIME-$START_TIME"
-	echo "Total compile time is $ELAPSED_TIME seconds"
+    let "ELAPSED_TIME=$END_TIME-$START_TIME"
+    echo "Total compile time is $ELAPSED_TIME seconds"
 
-	popd
+    popd
 }
 
 function build_android()
@@ -95,108 +96,114 @@ function build_android()
 
 function make_uboot_img()
 {
-	pushd $OUT_DIR
+    pushd $OUT_DIR
 
-	echo
-	echo '[[[[[[[ Make ramdisk image for u-boot ]]]]]]]'
-	echo
+    echo
+    echo '[[[[[[[ Make ramdisk image for u-boot ]]]]]]]'
+    echo
 
-	mkimage -A arm -O linux -T ramdisk -C none -a 0x40800000 -n "ramdisk" -d ramdisk.img ramdisk-uboot.img
-	check_exit
+    mkimage -A arm -O linux -T ramdisk -C none -a 0x40800000 -n "ramdisk" -d ramdisk.img ramdisk-uboot.img
+    check_exit
 
-	rm -f ramdisk.img
+    rm -f ramdisk.img
 
-	echo
-	popd
+    echo
+    popd
 }
 
 function make_fastboot_img()
 {
-	echo
-	echo '[[[[[[[ Make additional images for fastboot ]]]]]]]'
-	echo
+    echo
+    echo '[[[[[[[ Make additional images for fastboot ]]]]]]]'
+    echo
 
-	if [ ! -f $KERNEL_DIR/arch/arm/boot/zImage ]
-	then
-		echo "No zImage is found at $KERNEL_DIR/arch/arm/boot"
-		echo
-		return
-	fi
+    if [ ! -f $KERNEL_DIR/arch/arm/boot/zImage ]
+    then
+        echo "No zImage is found at $KERNEL_DIR/arch/arm/boot"
+        echo
+        return
+    fi
 
-	echo 'boot.img ->' $OUT_DIR
-	cp $KERNEL_DIR/arch/arm/boot/zImage-dtb $OUT_DIR/zImage-dtb
-	$OUT_HOSTBIN_DIR/mkbootimg --kernel $OUT_DIR/zImage-dtb --ramdisk $OUT_DIR/ramdisk.img -o $OUT_DIR/boot.img
-	check_exit
+    echo 'boot.img ->' $OUT_DIR
+    cp $KERNEL_DIR/arch/arm/boot/zImage-dtb $OUT_DIR/zImage-dtb
+    $OUT_HOSTBIN_DIR/mkbootimg --kernel $OUT_DIR/zImage-dtb --ramdisk $OUT_DIR/ramdisk.img -o $OUT_DIR/boot.img
+    check_exit
 
-	echo 'update.zip ->' $OUT_DIR
-	zip -j $OUT_DIR/update.zip $OUT_DIR/android-info.txt $OUT_DIR/boot.img $OUT_DIR/system.img
-	check_exit
+    echo 'update.zip ->' $OUT_DIR
+    zip -j $OUT_DIR/update.zip $OUT_DIR/android-info.txt $OUT_DIR/boot.img $OUT_DIR/system.img
+    check_exit
 
-	echo
+    echo
 }
 
 SYSTEMIMAGE_PARTITION_SIZE=$(grep "BOARD_SYSTEMIMAGE_PARTITION_SIZE " device/hardkernel/odroidxu3/BoardConfig.mk | awk '{field=$NF};END{print field}')
 
 function copy_root_2_system()
 {
-	echo
+    echo
     echo '[[[[[[[ copy ramdisk rootfs to system ]]]]]]]'
-	echo
+    echo
+
+    cp $KERNEL_DIR/arch/arm/boot/zImage-dtb $OUT_DIR/zImage-dtb
+    mkdir -p $OUT_DIR/system/lib/modules/backports
+    find $KERNEL_DIR -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules/
+    find $ROOT_DIR/hardware/wifi/realtek/drivers/8192cu/rtl8xxx_CU -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules/backports
+    find $ROOT_DIR/hardware/backports -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules/backports
 
     rm -rf $OUT_DIR/system/init
     rm -rf $OUT_DIR/system/sbin/adbd
     rm -rf $OUT_DIR/system/sbin/healthd
-	cp -arp $OUT_DIR/root/* $OUT_DIR/system/
-	mv $OUT_DIR/system/init $OUT_DIR/system/bin/
-	ln -sf /bin/init $OUT_DIR/system/init
-	mv $OUT_DIR/system/sbin/adbd $OUT_DIR/system/bin/
-	ln -sf /system/bin/adbd $OUT_DIR/system/sbin/adbd
-	mv $OUT_DIR/system/sbin/healthd $OUT_DIR/system/bin/
-	ln -sf /system/bin/healthd $OUT_DIR/system/sbin/healthd
+    cp -arp $OUT_DIR/root/* $OUT_DIR/system/
+    mv $OUT_DIR/system/init $OUT_DIR/system/bin/
+    ln -sf /bin/init $OUT_DIR/system/init
+    mv $OUT_DIR/system/sbin/adbd $OUT_DIR/system/bin/
+    ln -sf /system/bin/adbd $OUT_DIR/system/sbin/adbd
+    mv $OUT_DIR/system/sbin/healthd $OUT_DIR/system/bin/
+    ln -sf /system/bin/healthd $OUT_DIR/system/sbin/healthd
 
     echo $SYSTEMIMAGE_PARTITION_SIZE
 
     find $OUT_DIR/system -name .svn | xargs rm -rf
-	$OUT_HOSTBIN_DIR/make_ext4fs -s -l $SYSTEMIMAGE_PARTITION_SIZE -a system $OUT_DIR/system.img $OUT_DIR/system
+    $OUT_HOSTBIN_DIR/make_ext4fs -s -l $SYSTEMIMAGE_PARTITION_SIZE -a system $OUT_DIR/system.img $OUT_DIR/system
 
-	sync
+    sync
 }
 
 function make_update_zip()
 {
-	echo
-	echo '[[[[[[[ Make update zip ]]]]]]]'
-	echo
+    echo
+    echo '[[[[[[[ Make update zip ]]]]]]]'
+    echo
 
-	if [ ! -d $OUT_DIR/update ]
-	then
-		mkdir $OUT_DIR/update
-	else
-		rm -rf $OUT_DIR/update/*
-	fi
+    if [ ! -d $OUT_DIR/update ]
+    then
+        mkdir $OUT_DIR/update
+    else
+        rm -rf $OUT_DIR/update/*
+    fi
 
     echo '$PRODUCT_BOARD'
 
-	cp $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/zImage-dtb $OUT_DIR/update/
-	cp $OUT_DIR/ramdisk.img $OUT_DIR/update/
-	cp $OUT_DIR/system.img $OUT_DIR/update/
-	cp $OUT_DIR/userdata.img $OUT_DIR/update/
-	cp $OUT_DIR/cache.img $OUT_DIR/update/
+    cp $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/zImage-dtb $OUT_DIR/update/
+    cp $OUT_DIR/ramdisk.img $OUT_DIR/update/
+    cp $OUT_DIR/system.img $OUT_DIR/update/
+    cp $OUT_DIR/userdata.img $OUT_DIR/update/
+    cp $OUT_DIR/cache.img $OUT_DIR/update/
 
-	if [ -f $OUT_DIR/update.zip ]
-	then
-		rm -rf $OUT_DIR/update.zip
-		rm -rf $OUT_DIR/update.zip.md5sum
-	fi
+    if [ -f $OUT_DIR/update.zip ]
+    then
+        rm -rf $OUT_DIR/update.zip
+        rm -rf $OUT_DIR/update.zip.md5sum
+    fi
 
-	echo 'update.zip ->' $OUT_DIR
-	pushd $OUT_DIR
-	zip -r update.zip update/*
-	md5sum update.zip > update.zip.md5sum
-	check_exit
+    echo 'update.zip ->' $OUT_DIR
+    pushd $OUT_DIR
+    zip -r update.zip update/*
+    md5sum update.zip > update.zip.md5sum
+    check_exit
 
-	echo
-	popd
+    echo
+    popd
 }
 
 
@@ -205,26 +212,26 @@ echo '                Build android for '$PRODUCT_BOARD''
 echo
 
 case "$BUILD_OPTION" in
-	kernel)
-		build_kernel
-		;;
-	platform)
-		build_android
-		copy_root_2_system
-		make_update_zip
-		;;
-	all)
-		build_kernel
-		build_android
-		copy_root_2_system
-		make_update_zip
-		;;
-	*)
-		build_kernel
-		build_android
-		copy_root_2_system
-		make_update_zip
-		;;
+    kernel)
+        build_kernel
+        ;;
+    platform)
+        build_android
+        copy_root_2_system
+        make_update_zip
+        ;;
+    all)
+        build_kernel
+        build_android
+        copy_root_2_system
+        make_update_zip
+        ;;
+    *)
+        build_kernel
+        build_android
+        copy_root_2_system
+        make_update_zip
+        ;;
 esac
 
 echo ok success !!!
