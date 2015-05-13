@@ -147,7 +147,7 @@ function copy_root_2_system()
     cp $KERNEL_DIR/arch/arm/boot/zImage-dtb $OUT_DIR/zImage-dtb
     mkdir -p $OUT_DIR/system/lib/modules/backports
     find $KERNEL_DIR -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules/
-    find $ROOT_DIR/hardware/wifi/realtek/drivers/8192cu/rtl8xxx_CU -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules/backports
+    find $ROOT_DIR/hardware/wifi/realtek/drivers/8192cu/rtl8xxx_CU -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules
     find $ROOT_DIR/hardware/backports -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules/backports
 
     rm -rf $OUT_DIR/system/init
