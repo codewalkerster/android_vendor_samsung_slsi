@@ -184,7 +184,7 @@ function make_update_zip()
 
     echo '$PRODUCT_BOARD'
 
-    cp $ROOT_DIR/device/hardkernel/$PRODUCT_BOARD/zImage-dtb $OUT_DIR/update/
+    cp $OUT_DIR/zImage-dtb $OUT_DIR/update/
     cp $OUT_DIR/ramdisk.img $OUT_DIR/update/
     cp $OUT_DIR/system.img $OUT_DIR/update/
     cp $OUT_DIR/userdata.img $OUT_DIR/update/
