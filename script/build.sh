@@ -58,6 +58,8 @@ function build_kernel()
     make -j$CPU_JOB_NUM ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH
     echo "make ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH -C $PWD M=$ROOT_DIR/hardware/wifi/realtek/drivers/8192cu/rtl8xxx_CU"
     make ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH -C $PWD M=$ROOT_DIR/hardware/wifi/realtek/drivers/8192cu/rtl8xxx_CU
+    echo "make ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH -C $PWD M=$ROOT_DIR/hardware/wifi/realtek/drivers/rtl8812au"
+    make ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH -C $PWD M=$ROOT_DIR/hardware/wifi/realtek/drivers/rtl8812au
     echo "make clean -C ../../../hardware/backports ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH KLIB_BUILD=$PWD"
     make clean -C ../../../hardware/backports ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH KLIB_BUILD=$PWD
     echo "make -C ../../../hardware/backports ARCH=arm CROSS_COMPILE=$KERNEL_CROSS_COMPILE_PATH KLIB_BUILD=$PWD defconfig-odroidxu3"
@@ -149,7 +151,7 @@ function copy_root_2_system()
     cp $KERNEL_DIR/arch/arm/boot/zImage-dtb $OUT_DIR/zImage-dtb
     mkdir -p $OUT_DIR/system/lib/modules/backports
     find $KERNEL_DIR -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules/
-    find $ROOT_DIR/hardware/wifi/realtek/drivers/8192cu/rtl8xxx_CU -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules
+    find $ROOT_DIR/hardware/wifi/realtek/drivers -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules
     find $ROOT_DIR/hardware/backports -name *.ko | xargs -i cp {} $OUT_DIR/system/lib/modules/backports
 
     rm -rf $OUT_DIR/system/init
