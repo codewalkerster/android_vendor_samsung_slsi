@@ -188,6 +188,7 @@ function make_update_zip()
 
     echo '$PRODUCT_BOARD'
 
+    cp $ROOT_DIR/device/hardkernel/odroidxu3/uboot/*.bin $OUT_DIR/update/
     cp $OUT_DIR/zImage-dtb $OUT_DIR/update/
     cp $OUT_DIR/zImage-dtb $OUT_DIR/update/zImage
     cp $OUT_DIR/ramdisk.img $OUT_DIR/update/
