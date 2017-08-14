@@ -196,6 +196,11 @@ function make_update_zip()
     cp $OUT_DIR/zImage-dtb $OUT_DIR/update/zImage
     cp $OUT_DIR/ramdisk.img $OUT_DIR/update/
     cp $OUT_DIR/system.img $OUT_DIR/update/
+
+    echo 'split -b 256M system.img system_'
+    split -b 256M $OUT_DIR/update/system.img $OUT_DIR/update/system_
+    rm -rf $OUT_DIR/update/system.img
+
     cp $OUT_DIR/userdata.img $OUT_DIR/update/
     cp $OUT_DIR/cache.img $OUT_DIR/update/
 
