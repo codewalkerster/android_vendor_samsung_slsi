@@ -197,8 +197,8 @@ function make_update_zip()
     cp $OUT_DIR/ramdisk.img $OUT_DIR/update/
     cp $OUT_DIR/system.img $OUT_DIR/update/
 
-    echo 'split -b 256M system.img system_'
-    split -b 256M $OUT_DIR/update/system.img $OUT_DIR/update/system_
+    echo 'split -b 128M system.img system_'
+    split -b 128M $OUT_DIR/update/system.img $OUT_DIR/update/system_
     rm -rf $OUT_DIR/update/system.img
 
     cp $OUT_DIR/userdata.img $OUT_DIR/update/
