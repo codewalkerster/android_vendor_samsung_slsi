@@ -193,8 +193,6 @@ function make_update_zip()
     cp $ROOT_DIR/xu4_installer/uboot/tzsw.bin.hardkernel $OUT_DIR/update/tzsw.bin
     cp $ROOT_DIR/xu4_installer/uboot/u-boot.bin.hardkernel $OUT_DIR/update/u-boot.bin
     cp $OUT_DIR/zImage-dtb $OUT_DIR/update/
-    cp $OUT_DIR/zImage-dtb $OUT_DIR/update/zImage
-    cp $OUT_DIR/ramdisk.img $OUT_DIR/update/
     cp $OUT_DIR/system.img $OUT_DIR/update/
 
     echo 'split -b 128M system.img system_'
